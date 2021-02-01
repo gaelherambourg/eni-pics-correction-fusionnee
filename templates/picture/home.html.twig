@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Home{% endblock %}
+
+{% block body %}
+    <div class="search-form-container">
+        {# configure le formulaire pour toujours revenir à la page 1 sur soumission #}
+        {{ form_start(searchForm, {attr: {action: path('picture_home', {page: 1})}}) }}
+        {{ form_widget(searchForm) }}
+        <button>OK</button>
+        {{ form_end(searchForm) }}
+
+        {# ici je fais mon form en HTML, le form symfony ne m'apporterait vraiment rien #}
+        <form id="photographer-form" action="{{ path('search_photographer') }}">
+            <label for="photographer-input">Search for a photographer:</label>
+            <input type="search" name="photographer" id="photographer-input" placeholder="mary">
+            <div id="photographer-results-container"></div>
+        </form>
+
+        <script>
+            //quand on écrit une lettre dans le champ
+            $("#photographer-input").on("keyup", function(){
+                $.ajax({
+                    url: $("#photographer-form").attr("action"),
+                    data: {
+                        "photographer": $("#photographer-input").val()
+                    }
+                })
+                    .done(function(response){
+                        console.log(response);
+                        $("#photographer-results-container").html(response);
+                    });
+            });
+        </script>
+    </div>
+
+    <div class="pagination-infos">
+        <div>Page #{{ page }}</div>
+
+        {# doit-on afficher le lien vers la page précédente ? oui si on est sur la page 2 ou plus ! #}
+        {% set showPrevPageLink = page > 1 %}
+
+        {% if showPrevPageLink %}
+            {% set urlParams = formData %}
+            {% if urlParams is not null %}
+                {% set urlParams = urlParams|merge({'page': page-1}) %}
+            {% endif %}
+            <a href="{{ path('picture_home', urlParams) }}">Prev page</a>
+        {% endif %}
+
+        {# et celui de la page suivante ? si le numéro du dernier résultat affiché est plus petit que le nb total ! #}
+        {% set showNextPageLink = (numberOfResultsPerPage * page) < totalResultsCount %}
+
+        {% if showNextPageLink %}
+            {% set urlParams = formData %}
+            {% if urlParams is not null %}
+                {% set urlParams = urlParams|merge({'page': page+1}) %}
+            {% endif %}
+            <a href="{{ path('picture_home', urlParams) }}">Next page</a>
+        {% endif %}
+    </div>
+
+    <section class="pic-list">
+
+        {% for picture in pictures %}
+
+            <a href="{{ path('picture_detail', {'id': picture.id}) }}" title="View pic detail">
+                <img src="{{ picture.smallUrl }}" class="pic" alt="{{ picture.title }}">
+            </a>
+
+        {% endfor %}
+
+    </section>
+{% endblock %}
